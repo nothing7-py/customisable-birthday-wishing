@@ -14,6 +14,8 @@ const themes = {
 const journey = document.querySelector("#journey");
 const toast = document.querySelector("#toast");
 const music = document.querySelector("#music");
+let resumeMusicOnReturn = false;
+music.loop = true;
 const esc = (value) => String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[char]));
 const button = (label, action) => `<button class="button" data-action="${action}">${label}<span>↗</span></button>`;
 const scene = (content, extra = "") => `<section class="screen ${extra}"><div class="section-inner">${content}</div></section>`;
@@ -75,6 +77,15 @@ document.addEventListener("submit", (event) => {
 document.querySelector("#sender-toggle").addEventListener("click", () => { state.senderMode = !state.senderMode; render(); });
 document.querySelector("#sound-toggle").addEventListener("click", () => { if (!CONFIG.music.src) { showToast("Add a song in config.js first"); return; } if (state.musicPlaying) { music.pause(); state.musicPlaying = false; render(); } else playMusic(); });
 music.addEventListener("ended", () => { state.musicPlaying = false; render(); });
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    resumeMusicOnReturn = state.musicPlaying;
+    if (resumeMusicOnReturn) { music.pause(); state.musicPlaying = false; render(); }
+  } else if (resumeMusicOnReturn) {
+    resumeMusicOnReturn = false;
+    playMusic();
+  }
+});
 if (CONFIG.music.src) music.src = CONFIG.music.src;
 setInterval(() => { if (!state.senderMode && state.page === 1) render(); }, 60000);
 if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js"));
