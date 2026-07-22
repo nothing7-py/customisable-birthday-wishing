@@ -1,3 +1,4 @@
+/* Edit this one object to make the experience yours. */
 const CONFIG = {
   recipient: "Maya",
   sender: "Alex",
@@ -29,5 +30,5 @@ const CONFIG = {
   ],
   appreciation: ["your brave heart", "your ridiculous laugh", "your generous spirit", "the way you make people feel seen", "every bit of you"],
   wish: "Keep choosing joy, keep taking up space, and keep being wonderfully, unmistakably you.",
-  giftPrompt: "What do you want as your gift?"
+  giftPrompt: "What will you gift me?"
 };
