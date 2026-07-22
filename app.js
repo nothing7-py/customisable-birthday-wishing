@@ -1,7 +1,9 @@
 const STORAGE_KEY = "birthday-surprise-settings";
 const REPLY_KEY = "birthday-surprise-reply";
-const savedSettings = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-const state = { page: 0, theme: savedSettings?.theme || CONFIG.theme, musicPlaying: false, candleCount: 0, surprise: null, openedGift: false, letterOpen: false, submitted: Boolean(localStorage.getItem(REPLY_KEY)), senderMode: false, birthday: savedSettings?.birthday || CONFIG.birthday, reply: JSON.parse(localStorage.getItem(REPLY_KEY) || "null") };
+const readStorage = (key, fallback = null) => { try { return JSON.parse(localStorage.getItem(key) || "null") || fallback; } catch (error) { localStorage.removeItem(key); return fallback; } };
+const savedSettings = readStorage(STORAGE_KEY);
+const savedReply = readStorage(REPLY_KEY);
+const state = { page: 0, theme: savedSettings?.theme || CONFIG.theme, musicPlaying: false, candleCount: 0, surprise: null, openedGift: false, letterOpen: false, submitted: Boolean(savedReply), senderMode: false, birthday: savedSettings?.birthday || CONFIG.birthday, reply: savedReply };
 const themes = {
   cherry: { name: "Cherry blossom", description: "A dreamy garden of petals and paper lanterns.", icon: "✿", className: "theme-cherry" },
   forest: { name: "Forest", description: "A quiet woodland with fireflies in the dusk.", icon: "⌁", className: "theme-forest" },
