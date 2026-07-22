@@ -63,7 +63,7 @@ document.addEventListener("click", (event) => {
   const themeButton = event.target.closest("[data-theme]"); if (themeButton) { state.theme = themeButton.dataset.theme; render(); return; }
   const action = event.target.closest("[data-action]")?.dataset.action;
   if (action === "start") go(1); if (action === "startMusic") startMusic(); if (action === "next") go(state.page + 1); if (action === "receiver") { state.senderMode = false; render(); }
-  if (action === "openGift") { state.openedGift = true; render(); setTimeout(() => go(3), 900); }
+  if (action === "openGift") { state.openedGift = true; render(); setTimeout(() => go(4), 900); }
   if (action === "openLetter") { state.letterOpen = true; render(); }
   const surprise = event.target.closest("[data-surprise]"); if (surprise) { state.surprise = Number(surprise.dataset.surprise); showToast(CONFIG.surprises[state.surprise].message); render(); }
   const candle = event.target.closest("[data-candle]"); if (candle && Number(candle.dataset.candle) === state.candleCount) { state.candleCount += 1; render(); }
@@ -74,6 +74,7 @@ document.addEventListener("submit", (event) => {
 });
 document.querySelector("#sender-toggle").addEventListener("click", () => { state.senderMode = !state.senderMode; render(); });
 document.querySelector("#sound-toggle").addEventListener("click", () => { if (!CONFIG.music.src) { showToast("Add a song in config.js first"); return; } if (state.musicPlaying) { music.pause(); state.musicPlaying = false; render(); } else playMusic(); });
+music.addEventListener("ended", () => { state.musicPlaying = false; render(); });
 if (CONFIG.music.src) music.src = CONFIG.music.src;
 setInterval(() => { if (!state.senderMode && state.page === 1) render(); }, 60000);
 if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js"));
