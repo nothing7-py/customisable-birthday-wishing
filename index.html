@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#fff5f0" />
+    <meta name="description" content="A little birthday universe made just for you." />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>For You, With Love</title>
+  </head>
+  <body>
+    <div class="atmosphere" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    <div id="app">
+      <header class="topbar">
+        <a class="wordmark" href="#top" aria-label="Back to the beginning"><span class="wordmark-dot"></span><span id="brand-name">a little something</span></a>
+        <div class="topbar-right">
+          <div class="progress-wrap" aria-label="Journey progress"><span id="progress-label">chapter 1 of 11</span><div class="progress-track"><i id="progress-bar"></i></div></div>
+          <button class="text-button" id="sender-toggle" type="button">Sender view</button>
+          <button class="icon-button" id="sound-toggle" aria-label="Play background music" title="Music"><span>♪</span></button>
+        </div>
+      </header>
+      <main id="journey" tabindex="-1"></main>
+      <footer><span id="footer-message">made with a full heart</span><span>✦</span><span>© <span id="year"></span></span></footer>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <audio id="music" loop preload="metadata"></audio>
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
