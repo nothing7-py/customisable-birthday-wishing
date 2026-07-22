@@ -7,7 +7,7 @@ const CONFIG = {
   title: "a little something",
   footer: "made with a full heart",
   theme: "cherry",
-  music: { src: "", title: "your song", artwork: "" },
+  music: { src: "music.mp3", title: "your song", artwork: "" },
   letter: {
     intro: "Dear Maya,",
     paragraphs: ["Some people make the ordinary feel golden. You are one of those people.", "Thank you for every laugh, every kind word, and every little moment that becomes a favorite memory just because you are in it.", "Today is yours. I hope this next chapter brings you the same warmth you give so freely to everyone around you."],

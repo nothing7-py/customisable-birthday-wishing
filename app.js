@@ -57,7 +57,8 @@ function pages() {
 }
 
 function showToast(message) { toast.textContent = message; toast.classList.add("visible"); setTimeout(() => toast.classList.remove("visible"), 2400); }
-function startMusic() { if (CONFIG.music.src) { music.src = CONFIG.music.src; music.play().then(() => { state.musicPlaying = true; render(); }); } else showToast("Add a song in config.js to make this part sing"); go(3); }
+function playMusic() { return music.play().then(() => { state.musicPlaying = true; render(); }).catch(() => { state.musicPlaying = false; showToast("The song could not be played. Check music.src in config.js"); render(); }); }
+function startMusic() { if (CONFIG.music.src) { music.src = CONFIG.music.src; playMusic(); } else showToast("Add a song in config.js to make this part sing"); go(3); }
 document.addEventListener("click", (event) => {
   const themeButton = event.target.closest("[data-theme]"); if (themeButton) { state.theme = themeButton.dataset.theme; render(); return; }
   const action = event.target.closest("[data-action]")?.dataset.action;
@@ -72,7 +73,7 @@ document.addEventListener("submit", (event) => {
   if (event.target.id === "sender-form") { event.preventDefault(); const form = new FormData(event.target); const month = Number(form.get("month")); const day = Number(form.get("day")); if (month < 1 || month > 12 || day < 1 || day > 31) { showToast("Enter a valid month and day"); return; } state.birthday = { month, day }; saveSettings(); showToast("Birthday setup saved ✦"); render(); }
 });
 document.querySelector("#sender-toggle").addEventListener("click", () => { state.senderMode = !state.senderMode; render(); });
-document.querySelector("#sound-toggle").addEventListener("click", () => { if (!CONFIG.music.src) { showToast("Add a song in config.js first"); return; } if (state.musicPlaying) { music.pause(); state.musicPlaying = false; } else { music.play(); state.musicPlaying = true; } render(); });
+document.querySelector("#sound-toggle").addEventListener("click", () => { if (!CONFIG.music.src) { showToast("Add a song in config.js first"); return; } if (state.musicPlaying) { music.pause(); state.musicPlaying = false; render(); } else playMusic(); });
 if (CONFIG.music.src) music.src = CONFIG.music.src;
 setInterval(() => { if (!state.senderMode && state.page === 1) render(); }, 60000);
 if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js"));
