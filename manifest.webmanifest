@@ -1,0 +1,9 @@
+{
+  "name": "A Little Birthday Universe",
+  "short_name": "Birthday",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#fff5f0",
+  "theme_color": "#d4788f",
+  "description": "A customizable birthday journey made with a full heart."
+}
