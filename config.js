@@ -1,9 +1,9 @@
 /* Edit this one object to make the experience yours. */
 const CONFIG = {
-  recipient: "Ashraf Bhaijaan",
+  recipient: " ",
   sender: "Archita",
   senderEmail: "",
-  birthday: { month: 6, day: 22 },
+  birthday: { month: 7, day: 24 },
   title: "a little something",
   footer: "made with a full heart",
   theme: "cherry",
