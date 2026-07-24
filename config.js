@@ -14,11 +14,11 @@ const CONFIG = {
     signoff: "Always cheering for you,\nArchita"
   },
   photos: [
-    { src: "pic0.jiff", caption: "the good days", note: "keep this one close" },
-    { src: "pic1.jiff", caption: "little adventures", note: "more of these, please" },
-    { src: "pic4.jiff", caption: "your brightest smile", note: "my favorite view" }
+    { src: "pic0.gif", caption: "the good days", note: "keep this one close" },
+    { src: "pic1.gif", caption: "little adventures", note: "more of these, please" },
+    { src: "pic4.gif", caption: "your brightest smile", note: "my favorite view" }
   ],
-  catGif: "cat.jiff",
+  catGif: "cat.gif",
   memories: [
     { date: "chapter one", title: "The beginning of a beautiful thing", body: "Every story worth keeping has a first small moment. ", quote: "The best is yet to come." },
     { date: "somewhere between then & now", title: "All the in-between moments", body: "The unplanned coffees, the long conversations, and the days that turned into stories we still tell.", quote: "Collect moments, not things." },
