@@ -14,9 +14,9 @@ const CONFIG = {
     signoff: "Always cheering for you,\nArchita"
   },
   photos: [
-    { src: "pic0.gif", caption: "the good days", note: "keep this one close" },
-    { src: "pic1.gif", caption: "little adventures", note: "more of these, please" },
-    { src: "pic4.gif", caption: "your brightest smile", note: "my favorite view" }
+    { src: "Pic0.jfif", caption: "the good days", note: "keep this one close" },
+    { src: "Pic1.jfif", caption: "little adventures", note: "more of these, please" },
+    { src: "Pic4.jfif", caption: "your brightest smile", note: "my favorite view" }
   ],
   catGif: "cat.gif",
   memories: [
