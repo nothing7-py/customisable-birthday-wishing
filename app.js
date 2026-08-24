@@ -15,6 +15,11 @@ const journey = document.querySelector("#journey");
 const toast = document.querySelector("#toast");
 const music = document.querySelector("#music");
 let resumeMusicOnReturn = false;
+const getMusicSrc = () => {
+  const src = CONFIG.music.src || "";
+  if (!src) return "";
+  return src.includes("?") ? src : `${src}?v=20260804`;
+};
 music.loop = true;
 const esc = (value) => String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[char]));
 const button = (label, action) => `<button class="button" data-action="${action}">${label}<span>↗</span></button>`;
@@ -25,7 +30,7 @@ const photo = (item, index) => item.src ? `<img src="${esc(item.src)}" alt="${es
 const birthdayDate = () => { const now = new Date(); let date = new Date(now.getFullYear(), Number(state.birthday.month) - 1, Number(state.birthday.day), 0, 0, 0); if (date < now) date = new Date(now.getFullYear() + 1, Number(state.birthday.month) - 1, Number(state.birthday.day), 0, 0, 0); return date; };
 const countdown = () => { const difference = birthdayDate() - new Date(); const days = Math.max(0, Math.floor(difference / 86400000)); const hours = Math.max(0, Math.floor(difference / 3600000) % 24); const minutes = Math.max(0, Math.floor(difference / 60000) % 60); return `${days}d ${hours}h ${minutes}m`; };
 const saveSettings = () => localStorage.setItem(STORAGE_KEY, JSON.stringify({ birthday: state.birthday, theme: state.theme }));
-const renderSender = () => { document.body.className = theme().className; journey.innerHTML = scene(`<div class="kicker">private sender view</div><h2>Make it<br><em>yours.</em></h2><p class="lede">Set the birthday date before sharing the experience. Replies stay saved on this device.</p><form id="sender-form" class="sender-form"><label>Recipient name<input name="recipient" value="${esc(CONFIG.recipient)}" disabled></label><label>Birthday month<input name="month" type="number" min="1" max="12" value="${esc(state.birthday.month)}" required></label><label>Birthday day<input name="day" type="number" min="1" max="31" value="${esc(state.birthday.day)}" required></label><button class="button" type="submit">Save birthday setup <span>↗</span></button></form><div class="reply-panel"><div class="kicker">recipient reply</div>${state.reply ? `<h3>“${esc(state.reply.message)}”</h3><p>Sent ${esc(state.reply.sentAt)} by ${esc(CONFIG.recipient)}.</p>` : `<p class="lede">No reply yet. Their gift response will appear here after they submit it.</p>`}</div><button class="text-button" type="button" data-action="receiver">Back to receiver view</button>`, "sender-page"); };
+const renderSender = () => { document.body.className = theme().className; journey.innerHTML = scene(`<div class="kicker">private sender view</div><h2>Make it<br><em>yours.</em></h2><p class="lede">Set the birthday date before sharing the experience. Replies stay saved on this device.</p><form id="sender-form" class="sender-form"><label>Recipient name<input name="recipient" value="${esc(CONFIG.recipient)}" disabled></label><label>Birthday month<input name="month" type="number" min="1" max="12" value="${esc(state.birthday.month)}" required></label><label>Birthday day<input name="day" type="number" min="1" max="31" value="${esc(state.birthday.day)}" required></label><button class="button" type="submit">Save birthday setup <span>↗</span></button></form><div class="reply-panel"><div class="kicker">recipient reply</div>${state.reply ? `<h3>“${esc(state.reply.message)}”</h3><p>Sent ${esc(state.reply.sentAt)} by ${esc(state.reply.name || CONFIG.recipient)}.</p>` : `<p class="lede">No reply yet. Their gift response will appear here after they submit it.</p>`}</div><button class="text-button" type="button" data-action="receiver">Back to receiver view</button>`, "sender-page"); };
 
 function render() {
   if (state.senderMode) { renderSender(); return; }
@@ -54,13 +59,13 @@ function pages() {
     scene(`<div class="kicker">chapter 07 · pick one</div><h2>Three tiny<br><em>secrets for you.</em></h2><div class="surprise-grid">${CONFIG.surprises.map((item, index) => `<button class="surprise-card ${state.surprise === index ? "revealed" : ""}" data-surprise="${index}"><span>${item.icon}</span><strong>${state.surprise === index ? esc(item.message) : item.label}</strong><small>${state.surprise === index ? "for you, always" : "open me"}</small></button>`).join("")}</div>${state.surprise !== null ? button("One last chapter", "next") : `<p class="hint">choose the one that calls to you</p>`}`, "surprises-page"),
     scene(`<div class="kicker">chapter 08 · this is why</div><h2>Things I hope you<br><em>never forget.</em></h2><div class="appreciation">${CONFIG.appreciation.map((item, index) => `<p style="--delay:${index * 100}ms"><span>♡</span>${esc(item)}</p>`).join("")}</div><p class="wish">${esc(CONFIG.wish)}</p>${button("Make a wish", "next")}`, "appreciation-page"),
     scene(`<div class="kicker">chapter 09 · make it count</div><h2>One breath.<br><em>One wish.</em></h2><div class="cake"><div class="flames">${[0, 1, 2].map((n) => `<button class="flame ${state.candleCount > n ? "out" : ""}" data-candle="${n}" aria-label="Blow out candle ${n + 1}">✦</button>`).join("")}</div><div class="candles">|||</div><div class="cake-top"></div><div class="cake-body"></div></div><p class="hint">tap each flame to blow it out</p>${state.candleCount >= 3 ? `<p class="success-note">wish sent into the universe ✦</p>${button("The final surprise", "next")}` : ""}`, "cake-page"),
-    scene(`<div class="kicker">chapter 11 · before you go</div><h2>I have one tiny<br><em>birthday wish.</em></h2><p class="lede">${esc(CONFIG.giftPrompt)}</p>${state.submitted ? `<div class="final-note"><span>✦</span><h3>You just made my birthday even more special.</h3><p>Thank you for being you, ${esc(CONFIG.recipient)}.</p></div>` : `<form id="gift-form" class="gift-form"><input id="gift-input" type="text" placeholder="a promise, a hug, a song..." aria-label="Your gift" required><button class="button" type="submit">Send my gift <span>↗</span></button></form>`}${CONFIG.catGif ? `<div class="final-cat-wrap"><img class="final-cat-gif" src="${esc(CONFIG.catGif)}" alt="cat gif" loading="lazy"></div>` : ""}<p class="signature">with love,<br><strong>${esc(CONFIG.sender)}</strong></p>`, "final-page")
+    scene(`<div class="kicker">chapter 11 · before you go</div><h2>I have one tiny<br><em>birthday wish.</em></h2><p class="lede">${esc(CONFIG.giftPrompt)}</p>${state.submitted ? `<div class="final-note"><span>✦</span><h3>You just made my birthday even more special.</h3><p>Thank you for being you, ${esc(CONFIG.recipient)}.</p></div>` : `<form id="gift-form" class="gift-form"><textarea id="gift-input" placeholder="Type your wish here..." aria-label="Your wish" required></textarea><input id="gift-name" type="text" placeholder="Your name" aria-label="Your name" required><button class="button" type="submit">Send my wish <span>↗</span></button></form><p class="hint">Only the sender will see this wish and your name.</p>`}${CONFIG.catGif ? `<div class="final-cat-wrap"><img class="final-cat-gif" src="${esc(CONFIG.catGif)}" alt="cat gif" loading="lazy"></div>` : ""}<p class="signature">with love,<br><strong>${esc(CONFIG.sender)}</strong></p>`, "final-page")
   ];
 }
 
 function showToast(message) { toast.textContent = message; toast.classList.add("visible"); setTimeout(() => toast.classList.remove("visible"), 2400); }
-function playMusic() { return music.play().then(() => { state.musicPlaying = true; render(); }).catch(() => { state.musicPlaying = false; showToast("The song could not be played. Check music.src in config.js"); render(); }); }
-function startMusic() { if (CONFIG.music.src) { music.src = CONFIG.music.src; playMusic(); } else showToast("Add a song in config.js to make this part sing"); if (state.page === 2) { setTimeout(() => go(3), 220); } else { go(3); } }
+function playMusic() { return music.play().then(() => { music.loop = true; music.currentTime = 0; state.musicPlaying = true; render(); }).catch(() => { state.musicPlaying = false; showToast("The song could not be played. Check music.src in config.js"); render(); }); }
+function startMusic() { const src = getMusicSrc(); if (src) { music.src = src; music.load(); playMusic(); } else showToast("Add a song in config.js to make this part sing"); if (state.page === 2) { setTimeout(() => go(3), 220); } else { go(3); } }
 document.addEventListener("click", (event) => {
   const themeButton = event.target.closest("[data-theme]"); if (themeButton) { state.theme = themeButton.dataset.theme; render(); return; }
   const action = event.target.closest("[data-action]")?.dataset.action;
@@ -71,12 +76,21 @@ document.addEventListener("click", (event) => {
   const candle = event.target.closest("[data-candle]"); if (candle && Number(candle.dataset.candle) === state.candleCount) { state.candleCount += 1; render(); }
 });
 document.addEventListener("submit", (event) => {
-  if (event.target.id === "gift-form") { event.preventDefault(); const message = event.target.querySelector("input").value; state.reply = { message, sentAt: new Date().toLocaleString() }; localStorage.setItem(REPLY_KEY, JSON.stringify(state.reply)); state.submitted = true; showToast("Your gift has arrived ✦"); render(); }
+  if (event.target.id === "gift-form") {
+    event.preventDefault();
+    const message = event.target.querySelector("#gift-input").value.trim();
+    const name = event.target.querySelector("#gift-name").value.trim();
+    state.reply = { name: name || CONFIG.recipient, message, sentAt: new Date().toLocaleString() };
+    localStorage.setItem(REPLY_KEY, JSON.stringify(state.reply));
+    state.submitted = true;
+    showToast("Your wish has been saved ✦");
+    render();
+  }
   if (event.target.id === "sender-form") { event.preventDefault(); const form = new FormData(event.target); const month = Number(form.get("month")); const day = Number(form.get("day")); if (month < 1 || month > 12 || day < 1 || day > 31) { showToast("Enter a valid month and day"); return; } state.birthday = { month, day }; saveSettings(); showToast("Birthday setup saved ✦"); render(); }
 });
 document.querySelector("#sender-toggle").addEventListener("click", () => { state.senderMode = !state.senderMode; render(); });
 document.querySelector("#sound-toggle").addEventListener("click", () => { if (!CONFIG.music.src) { showToast("Add a song in config.js first"); return; } if (state.musicPlaying) { music.pause(); state.musicPlaying = false; render(); } else playMusic(); });
-music.addEventListener("ended", () => { state.musicPlaying = false; render(); });
+music.addEventListener("ended", () => { if (music.loop) { music.currentTime = 0; music.play().catch(() => { state.musicPlaying = false; render(); }); return; } state.musicPlaying = false; render(); });
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
     resumeMusicOnReturn = state.musicPlaying;
@@ -86,7 +100,7 @@ document.addEventListener("visibilitychange", () => {
     playMusic();
   }
 });
-if (CONFIG.music.src) music.src = CONFIG.music.src;
+if (CONFIG.music.src) { music.src = getMusicSrc(); music.load(); }
 setInterval(() => { if (!state.senderMode && state.page === 1) render(); }, 60000);
 if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js"));
 render();
