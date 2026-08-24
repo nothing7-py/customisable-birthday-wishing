@@ -1,6 +1,6 @@
 # Customisable Birthday Wishing
 
-A responsive, single-page birthday journey with five visual themes, interactive surprises, a private receiver wish, background music controls, and offline-ready PWA support.
+A responsive, single-page birthday journey with five visual themes, interactive surprises, a private wish reply, background music controls, and offline-ready PWA support.
 
 ## Personalise it
 

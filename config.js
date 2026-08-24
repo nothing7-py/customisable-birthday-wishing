@@ -5,31 +5,31 @@ const CONFIG = {
   senderEmail: "",
   birthday: { month: 7, day: 24 },
   title: "a little crush",
-  footer: "made for someone quietly special",
+  footer: "made for one very cool, very handsome person",
   theme: "cherry",
   music: { src: "KALYANI.mp3", title: "Kalyani", artwork: "" },
   letter: {
     intro: "hey you,",
-    paragraphs: ["We have only known each other briefly, but you have already become someone I look forward to seeing.", "I admire how effortlessly cool you are, and yes, I think you are very handsome too. Consider this a small, honest confession.", "I hope your birthday feels as bright and easy as you make things feel for the people around you."] ,
+    paragraphs: ["We have only known each other for a little while, but I already find myself looking forward to the moments when I get to see you.", "You are effortlessly cool, genuinely lovely, and, in case this was not obvious, very handsome. I admire you more than I know how to say casually.", "So here is a small, honest birthday note from someone who likes having you around a little more than she expected."] ,
     signoff: "A little shyly,\nArchita"
   },
   photos: [
-    { src: "pic1.jpeg", caption: "the first little snapshot", note: "a moment worth keeping" },
-    { src: "pic2.jpeg", caption: "your effortlessly cool side", note: "yes, I noticed" },
-    { src: "pic3.jpeg", caption: "that handsome smile", note: "my favorite view" }
+    { src: "pic1.jpeg", caption: "officially handsome", note: "the evidence is right here" },
+    { src: "pic2.jpeg", caption: "a flower for you", note: "from one admirer" },
+    { src: "pic3.jpeg", caption: "sent to the coolest boy", note: "with a tiny pink bow" }
   ],
   catGif: "cat.gif",
   memories: [
-    { date: "chapter one", title: "The beginning of a beautiful thing", body: "Every story worth keeping has a first small moment. ", quote: "The best is yet to come." },
-    { date: "somewhere between then & now", title: "All the in-between moments", body: "The unplanned coffees, the long conversations, and the days that turned into stories we still tell.", quote: "Collect moments, not things." },
-    { date: "today", title: "A new page, waiting", body: "Whatever this year brings, I hope you meet it with your whole heart. It looks wonderful on you.", quote: "Make it a year to remember." }
+    { date: "the beginning", title: "A small crush, honestly", body: "Some people are easy to notice. You are cool, kind, and handsome enough to make a brief hello linger in my mind.", quote: "The best stories start softly." },
+    { date: "somewhere between then & now", title: "The details I keep noticing", body: "Your laugh, your energy, and the way you make ordinary moments feel a little more fun. I hope you know how memorable you are.", quote: "The little things stay." },
+    { date: "today", title: "A birthday note, just for you", body: "I hope this year gives you reasons to smile as often as you make me smile. You deserve a brilliant one.", quote: "More good things are coming." }
   ],
   surprises: [
     { icon: "✿", label: "a little bloom", message: "You make every room feel lighter." },
     { icon: "♡", label: "a secret", message: "You are loved more than you know." },
     { icon: "✦", label: "a tiny wish", message: "May a happy surprise find you today." }
   ],
-  appreciation: ["your brave heart", "your ridiculous laugh", "your generous spirit", "the way you make people feel seen", "every bit of you"],
-  wish: "Keep being wonderfully, unmistakably you. It is difficult not to admire you.",
-  giftPrompt: "Before you go, write one birthday wish. I would love to read it later."
+  appreciation: ["your effortlessly cool energy", "your ridiculous laugh", "your kind heart", "the way you make a moment brighter", "that very handsome face"],
+  wish: "Keep being wonderfully, unmistakably you. It is honestly difficult not to admire you.",
+  giftPrompt: "Before you go, write one birthday wish. I would love to read your reply later."
 };

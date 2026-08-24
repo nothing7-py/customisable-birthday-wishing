@@ -22,4 +22,5 @@
 .reply-panel .kicker { margin-bottom:12px; }
 .reply-panel h3 { font-size:28px; color:var(--accent); }
 .reply-panel p { color:var(--muted); font-size:11px; line-height:1.7; }
+.reply-time { color:var(--accent) !important; font-size:10px !important; text-transform:uppercase; letter-spacing:.08em; }
 @media (max-width:700px) { .topbar-right { gap:10px; } .text-button { font-size:8px; } .sender-form { grid-template-columns:1fr; } .sender-form .button { grid-column:auto; } }
