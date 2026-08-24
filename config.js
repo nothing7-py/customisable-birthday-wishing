@@ -1,22 +1,22 @@
 /* Edit this one object to make the experience yours. */
 const CONFIG = {
-  recipient: " ",
+  recipient: "you",
   sender: "Archita",
   senderEmail: "",
   birthday: { month: 7, day: 24 },
-  title: "a little something",
-  footer: "made with a full heart",
+  title: "a little crush",
+  footer: "made for someone quietly special",
   theme: "cherry",
-  music: { src: "music.mp3?v=20260804", title: "your song", artwork: "" },
+  music: { src: "KALYANI.mp3", title: "Kalyani", artwork: "" },
   letter: {
-    intro: "yo bhaiya,",
-    paragraphs: ["Some people make the ordinary feel golden. You are one of those people.", "Thank you for every laugh, every kind word, and every little moment that becomes a favorite memory just because you are in it.", "Today is yours. I hope this next chapter brings you the same warmth you give so freely to everyone around you."],
-    signoff: "Always cheering for you,\nArchita"
+    intro: "hey you,",
+    paragraphs: ["We have only known each other briefly, but you have already become someone I look forward to seeing.", "I admire how effortlessly cool you are, and yes, I think you are very handsome too. Consider this a small, honest confession.", "I hope your birthday feels as bright and easy as you make things feel for the people around you."] ,
+    signoff: "A little shyly,\nArchita"
   },
   photos: [
-    { src: "Pic0.jfif", caption: "the good days", note: "keep this one close" },
-    { src: "Pic1.jfif", caption: "little adventures", note: "more of these, please" },
-    { src: "Pic4.jfif", caption: "your brightest smile", note: "my favorite view" }
+    { src: "pic1.jpeg", caption: "the first little snapshot", note: "a moment worth keeping" },
+    { src: "pic2.jpeg", caption: "your effortlessly cool side", note: "yes, I noticed" },
+    { src: "pic3.jpeg", caption: "that handsome smile", note: "my favorite view" }
   ],
   catGif: "cat.gif",
   memories: [
@@ -30,6 +30,6 @@ const CONFIG = {
     { icon: "✦", label: "a tiny wish", message: "May a happy surprise find you today." }
   ],
   appreciation: ["your brave heart", "your ridiculous laugh", "your generous spirit", "the way you make people feel seen", "every bit of you"],
-  wish: "Keep choosing joy, keep taking up space, and keep being wonderfully, unmistakably you.",
-  giftPrompt: "What do you want as your gift?"
+  wish: "Keep being wonderfully, unmistakably you. It is difficult not to admire you.",
+  giftPrompt: "Before you go, write one birthday wish. I would love to read it later."
 };

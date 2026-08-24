@@ -1,5 +1,5 @@
-const CACHE = "birthday-universe-v6";
-const FILES = ["./", "./index.html?v=20260724", "./styles.css?v=20260724", "./config.js?v=20260724", "./app.js?v=20260724", "./manifest.webmanifest", "./music.mp3", "./cat.gif", "./pic0.gif", "./pic1.gif", "./pic4.gif"];
-self.addEventListener("install", (event) => event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(FILES)).then(() => self.skipWaiting())));
+const CACHE = "birthday-universe-v11";
+const FILES = ["./", "./index.html?v=20260724", "./styles.css?v=20260724", "./config.js?v=20260724", "./app.js?v=20260724", "./manifest.webmanifest", "./KALYANI.mp3", "./pic1.jpeg", "./pic2.jpeg", "./pic3.jpeg", "./cat.gif"];
+self.addEventListener("install", (event) => event.waitUntil(caches.open(CACHE).then((cache) => Promise.all(FILES.map((file) => cache.add(file).catch(() => null)))).then(() => self.skipWaiting())));
 self.addEventListener("activate", (event) => event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key)))).then(() => self.clients.claim())));
 self.addEventListener("fetch", (event) => event.respondWith(fetch(event.request).then((response) => { const copy = response.clone(); caches.open(CACHE).then((cache) => cache.put(event.request, copy)); return response; }).catch(() => caches.match(event.request))));
