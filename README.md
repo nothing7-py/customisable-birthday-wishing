@@ -8,7 +8,7 @@ Open `config.js` and edit the single `CONFIG` object. Set `birthday.month` and `
 
 ## Sender and recipient flow
 
-Use the `Sender view` button in the top-right corner to save or change the birthday month and day. The receiver starts on the countdown page and can enter the journey after viewing the date. At the end, they can type a birthday wish and their name. When submitted, it is saved in that browser's local storage with the receiver's reply date and time. Open `Sender view` again on the same device to see the wish and the `Replied on` timestamp.
+Use the `Sender view` button in the top-right corner to enter or change the receiver name and birthday month and day. The receiver starts on the countdown page, where the saved name and date appear with confetti, and can enter the journey after viewing them. At the end, they can type a birthday wish and their name. When submitted, it is saved in that browser's local storage with the receiver's reply date and time. Open `Sender view` again on the same device to see the wish and the `Replied on` timestamp.
 
 For a sender and recipient on different devices, deploy the site with a backend or form endpoint and replace the local-storage reply handler in `app.js`; static GitHub Pages hosting cannot sync private replies between browsers by itself.
 
