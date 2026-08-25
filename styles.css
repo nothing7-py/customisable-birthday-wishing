@@ -35,3 +35,5 @@
 .reply-panel p { color:var(--muted); font-size:11px; line-height:1.7; }
 .reply-time { color:var(--accent) !important; font-size:10px !important; text-transform:uppercase; letter-spacing:.08em; }
 @media (max-width:700px) { .topbar-right { gap:10px; } .text-button { font-size:8px; } .sender-form { grid-template-columns:1fr; } .sender-form .button { grid-column:auto; } }
+.theme-night { --ink:#fffdf2; --muted:#f5f7ff; --line:rgba(255,253,242,.24); }
+.theme-night .topbar,.theme-night .screen,.theme-night .lede,.theme-night .hint,.theme-night .countdown-box,.theme-night .reply-panel,.theme-night .gift-form input,.theme-night .final-note,.theme-night .theme-card,.theme-night .polaroid,.theme-night .memory-page,.theme-night .surprise-card,.theme-night .letter-paper,.theme-night .signature,.theme-night .countdown-box span,.theme-night .reply-panel p,.theme-night .final-note p,.theme-night .letter-paper p,.theme-night .letter-paper .signoff,.theme-night .button,.theme-night .text-button { color:#fffdf2; text-shadow:0 0 10px rgba(255,253,242,.08); }
