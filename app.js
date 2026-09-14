@@ -1,26 +1,63 @@
 const STORAGE_KEY = "birthday-surprise-settings";
 const REPLY_KEY = "birthday-surprise-reply";
-const readStorage = (key, fallback = null) => { try { return JSON.parse(localStorage.getItem(key) || "null") || fallback; } catch (error) { localStorage.removeItem(key); return fallback; } };
-const savedSettings = readStorage(STORAGE_KEY);
+const readStorage = (key, fallback = null) => {
+  try {
+    if (typeof window === "undefined" || !window.localStorage) return fallback;
+    const stored = window.localStorage.getItem(key);
+    return stored === null ? fallback : JSON.parse(stored) ?? fallback;
+  } catch (error) {
+    if (typeof window !== "undefined") window.localStorage.removeItem(key);
+    return fallback;
+  }
+};
+const savedSettings = readStorage(STORAGE_KEY, {});
 const savedReplies = readStorage(REPLY_KEY, []);
 const normalizeReplies = (value) => Array.isArray(value) ? value : value ? [value] : [];
-const normalizeBirthday = (value) => {
-  const month = Number(value?.month ?? CONFIG.birthday.month);
-  const day = Number(value?.day ?? CONFIG.birthday.day);
+const normalizeBirthday = (value, fallback = CONFIG.birthday) => {
+  const month = Number(value?.month ?? fallback.month);
+  const day = Number(value?.day ?? fallback.day);
   return {
-    month: Number.isInteger(month) && month >= 1 && month <= 12 ? month : CONFIG.birthday.month,
-    day: Number.isInteger(day) && day >= 1 && day <= 31 ? day : CONFIG.birthday.day
+    month: Number.isInteger(month) && month >= 1 && month <= 12 ? month : Number(fallback.month),
+    day: Number.isInteger(day) && day >= 1 && day <= 31 ? day : Number(fallback.day)
   };
 };
-const normalizeRecipient = (value) => String(value ?? CONFIG.recipient).trim() || CONFIG.recipient;
-const initialProfile = savedSettings ? {
-  recipient: normalizeRecipient(savedSettings.recipient),
-  birthday: normalizeBirthday(savedSettings.birthday)
-} : {
-  recipient: CONFIG.recipient,
-  birthday: CONFIG.birthday
+const normalizeRecipient = (value, fallback = CONFIG.recipient) => {
+  const nextValue = String(value ?? fallback).trim();
+  return nextValue || fallback;
 };
-const state = { page: 0, theme: savedSettings?.theme || CONFIG.theme, musicPlaying: false, candleCount: 0, surprise: null, openedGift: false, letterOpen: false, senderMode: false, recipient: initialProfile.recipient, birthday: initialProfile.birthday, replies: normalizeReplies(savedReplies) };
+const normalizeTheme = (value, fallback = CONFIG.theme) => Object.prototype.hasOwnProperty.call(themes, String(value ?? "").trim()) ? String(value).trim() : fallback;
+const resolveProfile = (searchString = window.location.search, savedProfile = savedSettings, defaultProfile = { recipient: CONFIG.recipient, birthday: CONFIG.birthday, theme: CONFIG.theme }) => {
+  const params = new URLSearchParams(searchString || "");
+  const hasSharedProfile = params.has("recipient") || params.has("month") || params.has("day") || params.has("theme");
+
+  if (hasSharedProfile) {
+    return {
+      recipient: normalizeRecipient(params.get("recipient"), defaultProfile.recipient),
+      birthday: normalizeBirthday({ month: params.get("month"), day: params.get("day") }, defaultProfile.birthday),
+      theme: normalizeTheme(params.get("theme"), defaultProfile.theme)
+    };
+  }
+
+  if (savedProfile && (savedProfile.recipient || savedProfile.birthday)) {
+    return {
+      recipient: normalizeRecipient(savedProfile.recipient, defaultProfile.recipient),
+      birthday: normalizeBirthday(savedProfile.birthday, defaultProfile.birthday),
+      theme: normalizeTheme(savedProfile.theme, defaultProfile.theme)
+    };
+  }
+
+  return {
+    recipient: normalizeRecipient(defaultProfile.recipient),
+    birthday: normalizeBirthday(defaultProfile.birthday, defaultProfile.birthday),
+    theme: normalizeTheme(defaultProfile.theme, defaultProfile.theme)
+  };
+};
+const sharedProfile = (() => {
+  const params = new URLSearchParams(window.location.search);
+  return (params.has("recipient") || params.has("month") || params.has("day") || params.has("theme")) ? resolveProfile(window.location.search, null, { recipient: CONFIG.recipient, birthday: CONFIG.birthday, theme: CONFIG.theme }) : null;
+})();
+const initialProfile = sharedProfile || resolveProfile(window.location.search, savedSettings, { recipient: CONFIG.recipient, birthday: CONFIG.birthday, theme: CONFIG.theme });
+const state = { page: 0, theme: initialProfile.theme, musicPlaying: false, candleCount: 0, surprise: null, openedGift: false, letterOpen: false, senderMode: false, recipient: initialProfile.recipient, birthday: initialProfile.birthday, replies: normalizeReplies(savedReplies) };
 const themes = {
   cherry: { name: "Cherry blossom", description: "A dreamy garden of petals and paper lanterns.", icon: "✿", className: "theme-cherry" },
   forest: { name: "Forest", description: "A quiet woodland with fireflies in the dusk.", icon: "⌁", className: "theme-forest" },
@@ -47,7 +84,8 @@ const go = (page) => { state.page = Math.max(0, Math.min(pageCount() - 1, page))
 const photo = (item, index) => item.src ? `<img src="${esc(item.src)}" alt="${esc(item.caption)}" loading="lazy" onerror="this.style.display='none'; this.parentElement.classList.add('photo-fallback'); this.parentElement.innerHTML += '<div class=\"photo-placeholder\"><span>${["01", "02", "03"][index]}</span><small>photo loaded</small></div>';">` : `<div class="photo-placeholder"><span>${["01", "02", "03"][index]}</span><small>add a photo<br>in config.js</small></div>`;
 const birthdayDate = () => { const now = new Date(); let date = new Date(now.getFullYear(), Number(state.birthday.month) - 1, Number(state.birthday.day), 0, 0, 0); if (date < now) date = new Date(now.getFullYear() + 1, Number(state.birthday.month) - 1, Number(state.birthday.day), 0, 0, 0); return date; };
 const countdown = () => { const difference = birthdayDate() - new Date(); const days = Math.max(0, Math.floor(difference / 86400000)); const hours = Math.max(0, Math.floor(difference / 3600000) % 24); const minutes = Math.max(0, Math.floor(difference / 60000) % 60); return `${days}d ${hours}h ${minutes}m`; };
-const saveSettings = () => localStorage.setItem(STORAGE_KEY, JSON.stringify({ recipient: normalizeRecipient(state.recipient), birthday: normalizeBirthday(state.birthday), theme: state.theme }));
+const saveSettings = () => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ recipient: normalizeRecipient(state.recipient), birthday: normalizeBirthday(state.birthday), theme: state.theme })); } catch (error) { /* Sharing works even when storage is unavailable. */ } };
+if (sharedProfile) saveSettings();
 const applySenderProfile = (recipient, month, day) => {
   const nextRecipient = normalizeRecipient(recipient);
   const nextMonth = Number(month);
@@ -59,7 +97,9 @@ const applySenderProfile = (recipient, month, day) => {
 };
 const saveReplies = () => localStorage.setItem(REPLY_KEY, JSON.stringify(state.replies));
 const replyCards = () => state.replies.length ? state.replies.slice().reverse().map((reply, index) => `<article class="reply-card"><span class="reply-number">${state.replies.length - index}</span><h3>“${esc(reply.message)}”</h3>${reply.feedback ? `<p class="reply-feedback">“${esc(reply.feedback)}”</p>` : ""}<p>Replied on ${esc(reply.sentAt)} by ${esc(reply.name || state.recipient)}${reply.rating ? ` · Rated ${esc(reply.rating)}/10` : ""}.</p></article>`).join("") : `<p class="lede">No replies yet. They will appear here after the receiver sends them.</p>`;
-const renderSender = () => { document.body.className = theme().className; journey.innerHTML = scene(`<div class="kicker">private sender view</div><h2>Keep their<br><em>replies safe.</em></h2><p class="lede">Set the receiver name and birthday date once. The same details are used by every theme and saved in this browser.</p><form id="sender-form" class="sender-form"><label>Receiver name<input name="recipient" value="${esc(state.recipient)}" required></label><label>Birthday month<input name="month" type="number" min="1" max="12" value="${esc(state.birthday.month)}" required></label><label>Birthday day<input name="day" type="number" min="1" max="31" value="${esc(state.birthday.day)}" required></label><button class="button" type="submit">Save birthday setup <span>↗</span></button></form><div class="reply-panel"><div class="kicker">receiver replies · ${state.replies.length}</div>${replyCards()}</div><button class="text-button" type="button" data-action="receiver">Back to receiver view</button>`, "sender-page"); };
+const receiverLink = () => { const url = new URL(window.location.href); url.search = ""; url.hash = ""; url.searchParams.set("recipient", state.recipient); url.searchParams.set("month", state.birthday.month); url.searchParams.set("day", state.birthday.day); url.searchParams.set("theme", state.theme); return url.toString(); };
+const copyReceiverLink = async () => { const link = receiverLink(); try { await navigator.clipboard.writeText(link); showToast("Receiver link copied ✦"); } catch (error) { window.prompt("Copy this receiver link:", link); } };
+const renderSender = () => { document.body.className = theme().className; journey.innerHTML = scene(`<div class="kicker">private sender view</div><h2>Keep their<br><em>replies safe.</em></h2><p class="lede">Set the receiver name and birthday date once. The same details are used by every theme and saved in this browser.</p><form id="sender-form" class="sender-form"><label>Receiver name<input name="recipient" value="${esc(state.recipient)}" required></label><label>Birthday month<input name="month" type="number" min="1" max="12" value="${esc(state.birthday.month)}" required></label><label>Birthday day<input name="day" type="number" min="1" max="31" value="${esc(state.birthday.day)}" required></label><button class="button" type="submit">Save birthday setup <span>↗</span></button></form><div class="share-panel"><strong>Send these details to the receiver</strong><p>Copy a link and send it to them. Their browser will use this name and date.</p><button class="button" type="button" data-action="copy-link">Copy receiver link <span>↗</span></button></div><div class="reply-panel"><div class="kicker">receiver replies · ${state.replies.length}</div>${replyCards()}</div><button class="text-button" type="button" data-action="receiver">Back to receiver view</button>`, "sender-page"); };
 
 function render() {
   if (state.senderMode) { renderSender(); return; }
@@ -98,7 +138,7 @@ function startMusic() { const src = getMusicSrc(); if (src) { music.src = src; m
 document.addEventListener("click", (event) => {
   const themeButton = event.target.closest("[data-theme]"); if (themeButton) { state.theme = themeButton.dataset.theme; saveSettings(); render(); return; }
   const action = event.target.closest("[data-action]")?.dataset.action;
-  if (action === "start") go(1); if (action === "startMusic") startMusic(); if (action === "next") { if (state.page === 2) { startMusic(); return; } go(state.page + 1); } if (action === "receiver") { state.senderMode = false; render(); }
+  if (action === "start") go(1); if (action === "startMusic") startMusic(); if (action === "next") { if (state.page === 2) { startMusic(); return; } go(state.page + 1); } if (action === "receiver") { state.senderMode = false; render(); } if (action === "copy-link") copyReceiverLink();
   if (action === "openGift") { state.openedGift = true; render(); setTimeout(() => go(4), 900); }
   if (action === "openLetter") { state.letterOpen = true; render(); }
   const surprise = event.target.closest("[data-surprise]"); if (surprise) { state.surprise = Number(surprise.dataset.surprise); showToast(CONFIG.surprises[state.surprise].message); render(); }
