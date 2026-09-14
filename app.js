@@ -4,7 +4,23 @@ const readStorage = (key, fallback = null) => { try { return JSON.parse(localSto
 const savedSettings = readStorage(STORAGE_KEY);
 const savedReplies = readStorage(REPLY_KEY, []);
 const normalizeReplies = (value) => Array.isArray(value) ? value : value ? [value] : [];
-const state = { page: 0, theme: savedSettings?.theme || CONFIG.theme, musicPlaying: false, candleCount: 0, surprise: null, openedGift: false, letterOpen: false, senderMode: false, recipient: savedSettings?.recipient || CONFIG.recipient, birthday: savedSettings?.birthday || CONFIG.birthday, replies: normalizeReplies(savedReplies) };
+const normalizeBirthday = (value) => {
+  const month = Number(value?.month ?? CONFIG.birthday.month);
+  const day = Number(value?.day ?? CONFIG.birthday.day);
+  return {
+    month: Number.isInteger(month) && month >= 1 && month <= 12 ? month : CONFIG.birthday.month,
+    day: Number.isInteger(day) && day >= 1 && day <= 31 ? day : CONFIG.birthday.day
+  };
+};
+const normalizeRecipient = (value) => String(value ?? CONFIG.recipient).trim() || CONFIG.recipient;
+const initialProfile = savedSettings ? {
+  recipient: normalizeRecipient(savedSettings.recipient),
+  birthday: normalizeBirthday(savedSettings.birthday)
+} : {
+  recipient: CONFIG.recipient,
+  birthday: CONFIG.birthday
+};
+const state = { page: 0, theme: savedSettings?.theme || CONFIG.theme, musicPlaying: false, candleCount: 0, surprise: null, openedGift: false, letterOpen: false, senderMode: false, recipient: initialProfile.recipient, birthday: initialProfile.birthday, replies: normalizeReplies(savedReplies) };
 const themes = {
   cherry: { name: "Cherry blossom", description: "A dreamy garden of petals and paper lanterns.", icon: "✿", className: "theme-cherry" },
   forest: { name: "Forest", description: "A quiet woodland with fireflies in the dusk.", icon: "⌁", className: "theme-forest" },
@@ -31,7 +47,16 @@ const go = (page) => { state.page = Math.max(0, Math.min(pageCount() - 1, page))
 const photo = (item, index) => item.src ? `<img src="${esc(item.src)}" alt="${esc(item.caption)}" loading="lazy" onerror="this.style.display='none'; this.parentElement.classList.add('photo-fallback'); this.parentElement.innerHTML += '<div class=\"photo-placeholder\"><span>${["01", "02", "03"][index]}</span><small>photo loaded</small></div>';">` : `<div class="photo-placeholder"><span>${["01", "02", "03"][index]}</span><small>add a photo<br>in config.js</small></div>`;
 const birthdayDate = () => { const now = new Date(); let date = new Date(now.getFullYear(), Number(state.birthday.month) - 1, Number(state.birthday.day), 0, 0, 0); if (date < now) date = new Date(now.getFullYear() + 1, Number(state.birthday.month) - 1, Number(state.birthday.day), 0, 0, 0); return date; };
 const countdown = () => { const difference = birthdayDate() - new Date(); const days = Math.max(0, Math.floor(difference / 86400000)); const hours = Math.max(0, Math.floor(difference / 3600000) % 24); const minutes = Math.max(0, Math.floor(difference / 60000) % 60); return `${days}d ${hours}h ${minutes}m`; };
-const saveSettings = () => localStorage.setItem(STORAGE_KEY, JSON.stringify({ recipient: state.recipient, birthday: state.birthday, theme: state.theme }));
+const saveSettings = () => localStorage.setItem(STORAGE_KEY, JSON.stringify({ recipient: normalizeRecipient(state.recipient), birthday: normalizeBirthday(state.birthday), theme: state.theme }));
+const applySenderProfile = (recipient, month, day) => {
+  const nextRecipient = normalizeRecipient(recipient);
+  const nextMonth = Number(month);
+  const nextDay = Number(day);
+
+  state.recipient = nextRecipient;
+  state.birthday = normalizeBirthday({ month: nextMonth, day: nextDay });
+  saveSettings();
+};
 const saveReplies = () => localStorage.setItem(REPLY_KEY, JSON.stringify(state.replies));
 const replyCards = () => state.replies.length ? state.replies.slice().reverse().map((reply, index) => `<article class="reply-card"><span class="reply-number">${state.replies.length - index}</span><h3>“${esc(reply.message)}”</h3>${reply.feedback ? `<p class="reply-feedback">“${esc(reply.feedback)}”</p>` : ""}<p>Replied on ${esc(reply.sentAt)} by ${esc(reply.name || state.recipient)}${reply.rating ? ` · Rated ${esc(reply.rating)}/10` : ""}.</p></article>`).join("") : `<p class="lede">No replies yet. They will appear here after the receiver sends them.</p>`;
 const renderSender = () => { document.body.className = theme().className; journey.innerHTML = scene(`<div class="kicker">private sender view</div><h2>Keep their<br><em>replies safe.</em></h2><p class="lede">Set the receiver name and birthday date once. The same details are used by every theme and saved in this browser.</p><form id="sender-form" class="sender-form"><label>Receiver name<input name="recipient" value="${esc(state.recipient)}" required></label><label>Birthday month<input name="month" type="number" min="1" max="12" value="${esc(state.birthday.month)}" required></label><label>Birthday day<input name="day" type="number" min="1" max="31" value="${esc(state.birthday.day)}" required></label><button class="button" type="submit">Save birthday setup <span>↗</span></button></form><div class="reply-panel"><div class="kicker">receiver replies · ${state.replies.length}</div>${replyCards()}</div><button class="text-button" type="button" data-action="receiver">Back to receiver view</button>`, "sender-page"); };
@@ -98,7 +123,7 @@ document.addEventListener("submit", (event) => {
     showToast(`Reply ${state.replies.length} has been saved ✦`);
     render();
   }
-  if (event.target.id === "sender-form") { event.preventDefault(); const form = new FormData(event.target); const recipient = String(form.get("recipient") || "").trim(); const month = Number(form.get("month")); const day = Number(form.get("day")); if (!recipient) { showToast("Enter the receiver's name"); return; } if (month < 1 || month > 12 || day < 1 || day > 31) { showToast("Enter a valid month and day"); return; } state.recipient = recipient; state.birthday = { month, day }; saveSettings(); showToast("Birthday setup saved ✦"); render(); }
+  if (event.target.id === "sender-form") { event.preventDefault(); const form = new FormData(event.target); const recipient = String(form.get("recipient") || "").trim(); const month = Number(form.get("month")); const day = Number(form.get("day")); if (!recipient) { showToast("Enter the receiver's name"); return; } if (month < 1 || month > 12 || day < 1 || day > 31) { showToast("Enter a valid month and day"); return; } applySenderProfile(recipient, month, day); showToast("Birthday setup saved ✦"); render(); }
 });
 document.querySelector("#sender-toggle").addEventListener("click", () => { state.senderMode = !state.senderMode; render(); });
 document.querySelector("#sound-toggle").addEventListener("click", () => { if (!CONFIG.music.src) { showToast("Add a song in config.js first"); return; } if (state.musicPlaying) { music.pause(); state.musicPlaying = false; render(); } else playMusic(); });
