@@ -7,6 +7,7 @@ const CONFIG = {
   title: "a little crush",
   footer: "made for one very cool, very handsome person",
   theme: "cherry",
+  publicUrl: "https://nothing7-py.github.io/customisable-birthday-wishing/",
   backend: {
     supabaseUrl: "",
     supabaseAnonKey: ""

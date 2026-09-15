@@ -20,7 +20,15 @@ const themes = {
   mountain: { name: "Mountains", description: "Golden light, open air, and new horizons.", icon: "△", className: "theme-mountain" }
 };
 const normalizeReplies = (value) => Array.isArray(value) ? value : value ? [value] : [];
-const resolveAppProfile = (searchString = window.location.search, savedProfile = savedSettings, defaultProfile = { recipient: CONFIG.recipient, birthday: CONFIG.birthday, theme: CONFIG.theme }) => globalThis.ProfileUtils.resolveProfile(searchString, savedProfile, defaultProfile, themes);
+const resolveAppProfile = (searchString = window.location.search, savedProfile = savedSettings, defaultProfile = { recipient: CONFIG.recipient, birthday: CONFIG.birthday, theme: CONFIG.theme }) => {
+  const resolver = globalThis.ProfileUtils?.resolveProfile;
+  if (typeof resolver === "function") return resolver(searchString, savedProfile, defaultProfile, themes);
+  return {
+    recipient: String(savedProfile?.recipient || defaultProfile.recipient || "you").trim() || "you",
+    birthday: savedProfile?.birthday || defaultProfile.birthday,
+    theme: Object.prototype.hasOwnProperty.call(themes, savedProfile?.theme) ? savedProfile.theme : defaultProfile.theme
+  };
+};
 const sharedProfile = (() => {
   const params = new URLSearchParams(window.location.search);
   const hasShared = params.has("share") || params.has("recipient") || params.has("month") || params.has("day") || params.has("theme");
@@ -58,7 +66,13 @@ const applySenderProfile = (recipient, month, day) => {
   state.birthday = normalizeBirthday({ month: nextMonth, day: nextDay });
   saveSettings();
 };
-const saveReplies = () => localStorage.setItem(REPLY_KEY, JSON.stringify(state.replies));
+const saveReplies = () => {
+  try {
+    localStorage.setItem(REPLY_KEY, JSON.stringify(state.replies));
+  } catch (error) {
+    showToast("Reply is visible here, but browser storage is unavailable");
+  }
+};
 const backendConfigured = () => Boolean(CONFIG.backend?.supabaseUrl && CONFIG.backend?.supabaseAnonKey);
 const profileKey = () => window.ProfileUtils?.encodeProfileShare ? window.ProfileUtils.encodeProfileShare({ recipient: state.recipient, month: state.birthday.month, day: state.birthday.day, theme: state.theme }) : `${state.recipient}|${state.birthday.month}|${state.birthday.day}|${state.theme}`;
 const supabaseRequest = async (path, options = {}) => {
@@ -104,7 +118,7 @@ const saveRemoteReply = async (reply) => {
 };
 const replyCards = () => state.replies.length ? state.replies.slice().reverse().map((reply, index) => `<article class="reply-card"><span class="reply-number">${state.replies.length - index}</span><h3>“${esc(reply.message)}”</h3>${reply.feedback ? `<p class="reply-feedback">“${esc(reply.feedback)}”</p>` : ""}<p>Replied on ${esc(reply.sentAt)} by ${esc(reply.name || state.recipient)}${reply.rating ? ` · Rated ${esc(reply.rating)}/10` : ""}.</p></article>`).join("") : `<p class="lede">No replies yet. They will appear here after the receiver sends them.</p>`;
 const receiverLink = () => {
-  const url = new URL(window.location.href);
+  const url = new URL(CONFIG.publicUrl || window.location.href);
   url.search = "";
   url.hash = "";
   const shareValue = window.ProfileUtils?.encodeProfileShare ? window.ProfileUtils.encodeProfileShare({ recipient: state.recipient, month: state.birthday.month, day: state.birthday.day, theme: state.theme }) : encodeURIComponent(JSON.stringify({ recipient: state.recipient, month: state.birthday.month, day: state.birthday.day, theme: state.theme }));
