@@ -12,6 +12,13 @@ const readStorage = (key, fallback = null) => {
 };
 const savedSettings = readStorage(STORAGE_KEY, {});
 const savedReplies = readStorage(REPLY_KEY, []);
+const themes = {
+  cherry: { name: "Cherry blossom", description: "A dreamy garden of petals and paper lanterns.", icon: "✿", className: "theme-cherry" },
+  forest: { name: "Forest", description: "A quiet woodland with fireflies in the dusk.", icon: "⌁", className: "theme-forest" },
+  night: { name: "Night sky", description: "A sky full of stars, just waiting for a wish.", icon: "☾", className: "theme-night" },
+  ocean: { name: "Ocean", description: "A little blue world where everything moves gently.", icon: "≋", className: "theme-ocean" },
+  mountain: { name: "Mountains", description: "Golden light, open air, and new horizons.", icon: "△", className: "theme-mountain" }
+};
 const normalizeReplies = (value) => Array.isArray(value) ? value : value ? [value] : [];
 const normalizeBirthday = (value, fallback = CONFIG.birthday) => {
   const month = Number(value?.month ?? fallback.month);
@@ -28,6 +35,18 @@ const normalizeRecipient = (value, fallback = CONFIG.recipient) => {
 const normalizeTheme = (value, fallback = CONFIG.theme) => Object.prototype.hasOwnProperty.call(themes, String(value ?? "").trim()) ? String(value).trim() : fallback;
 const resolveProfile = (searchString = window.location.search, savedProfile = savedSettings, defaultProfile = { recipient: CONFIG.recipient, birthday: CONFIG.birthday, theme: CONFIG.theme }) => {
   const params = new URLSearchParams(searchString || "");
+  const sharedSecret = params.get("share");
+  if (sharedSecret) {
+    const decoded = globalThis.ProfileUtils?.decodeProfileShare ? globalThis.ProfileUtils.decodeProfileShare(sharedSecret) : null;
+    if (decoded) {
+      return {
+        recipient: normalizeRecipient(decoded.recipient, defaultProfile.recipient),
+        birthday: normalizeBirthday({ month: decoded.month, day: decoded.day }, defaultProfile.birthday),
+        theme: normalizeTheme(decoded.theme, defaultProfile.theme)
+      };
+    }
+  }
+
   const hasSharedProfile = params.has("recipient") || params.has("month") || params.has("day") || params.has("theme");
 
   if (hasSharedProfile) {
@@ -54,17 +73,11 @@ const resolveProfile = (searchString = window.location.search, savedProfile = sa
 };
 const sharedProfile = (() => {
   const params = new URLSearchParams(window.location.search);
-  return (params.has("recipient") || params.has("month") || params.has("day") || params.has("theme")) ? resolveProfile(window.location.search, null, { recipient: CONFIG.recipient, birthday: CONFIG.birthday, theme: CONFIG.theme }) : null;
+  const hasShared = params.has("share") || params.has("recipient") || params.has("month") || params.has("day") || params.has("theme");
+  return hasShared ? resolveProfile(window.location.search, null, { recipient: CONFIG.recipient, birthday: CONFIG.birthday, theme: CONFIG.theme }) : null;
 })();
 const initialProfile = sharedProfile || resolveProfile(window.location.search, savedSettings, { recipient: CONFIG.recipient, birthday: CONFIG.birthday, theme: CONFIG.theme });
 const state = { page: 0, theme: initialProfile.theme, musicPlaying: false, candleCount: 0, surprise: null, openedGift: false, letterOpen: false, senderMode: false, recipient: initialProfile.recipient, birthday: initialProfile.birthday, replies: normalizeReplies(savedReplies) };
-const themes = {
-  cherry: { name: "Cherry blossom", description: "A dreamy garden of petals and paper lanterns.", icon: "✿", className: "theme-cherry" },
-  forest: { name: "Forest", description: "A quiet woodland with fireflies in the dusk.", icon: "⌁", className: "theme-forest" },
-  night: { name: "Night sky", description: "A sky full of stars, just waiting for a wish.", icon: "☾", className: "theme-night" },
-  ocean: { name: "Ocean", description: "A little blue world where everything moves gently.", icon: "≋", className: "theme-ocean" },
-  mountain: { name: "Mountains", description: "Golden light, open air, and new horizons.", icon: "△", className: "theme-mountain" }
-};
 const journey = document.querySelector("#journey");
 const toast = document.querySelector("#toast");
 const music = document.querySelector("#music");
@@ -97,9 +110,16 @@ const applySenderProfile = (recipient, month, day) => {
 };
 const saveReplies = () => localStorage.setItem(REPLY_KEY, JSON.stringify(state.replies));
 const replyCards = () => state.replies.length ? state.replies.slice().reverse().map((reply, index) => `<article class="reply-card"><span class="reply-number">${state.replies.length - index}</span><h3>“${esc(reply.message)}”</h3>${reply.feedback ? `<p class="reply-feedback">“${esc(reply.feedback)}”</p>` : ""}<p>Replied on ${esc(reply.sentAt)} by ${esc(reply.name || state.recipient)}${reply.rating ? ` · Rated ${esc(reply.rating)}/10` : ""}.</p></article>`).join("") : `<p class="lede">No replies yet. They will appear here after the receiver sends them.</p>`;
-const receiverLink = () => { const url = new URL(window.location.href); url.search = ""; url.hash = ""; url.searchParams.set("recipient", state.recipient); url.searchParams.set("month", state.birthday.month); url.searchParams.set("day", state.birthday.day); url.searchParams.set("theme", state.theme); return url.toString(); };
+const receiverLink = () => {
+  const url = new URL(window.location.href);
+  url.search = "";
+  url.hash = "";
+  const shareValue = window.ProfileUtils?.encodeProfileShare ? window.ProfileUtils.encodeProfileShare({ recipient: state.recipient, month: state.birthday.month, day: state.birthday.day, theme: state.theme }) : encodeURIComponent(JSON.stringify({ recipient: state.recipient, month: state.birthday.month, day: state.birthday.day, theme: state.theme }));
+  url.searchParams.set("share", shareValue);
+  return url.toString();
+};
 const copyReceiverLink = async () => { const link = receiverLink(); try { await navigator.clipboard.writeText(link); showToast("Receiver link copied ✦"); } catch (error) { window.prompt("Copy this receiver link:", link); } };
-const renderSender = () => { document.body.className = theme().className; journey.innerHTML = scene(`<div class="kicker">private sender view</div><h2>Keep their<br><em>replies safe.</em></h2><p class="lede">Set the receiver name and birthday date once. The same details are used by every theme and saved in this browser.</p><form id="sender-form" class="sender-form"><label>Receiver name<input name="recipient" value="${esc(state.recipient)}" required></label><label>Birthday month<input name="month" type="number" min="1" max="12" value="${esc(state.birthday.month)}" required></label><label>Birthday day<input name="day" type="number" min="1" max="31" value="${esc(state.birthday.day)}" required></label><button class="button" type="submit">Save birthday setup <span>↗</span></button></form><div class="share-panel"><strong>Send these details to the receiver</strong><p>Copy a link and send it to them. Their browser will use this name and date.</p><button class="button" type="button" data-action="copy-link">Copy receiver link <span>↗</span></button></div><div class="reply-panel"><div class="kicker">receiver replies · ${state.replies.length}</div>${replyCards()}</div><button class="text-button" type="button" data-action="receiver">Back to receiver view</button>`, "sender-page"); };
+const renderSender = () => { document.body.className = theme().className; journey.innerHTML = scene(`<div class="kicker">private sender view</div><h2>Keep their<br><em>replies safe.</em></h2><p class="lede">Set the receiver name and birthday date once. The same details are used by every theme and saved in this browser.</p><form id="sender-form" class="sender-form"><label>Receiver name<input name="recipient" value="${esc(state.recipient)}" required></label><label>Birthday month<input name="month" type="number" min="1" max="12" value="${esc(state.birthday.month)}" required></label><label>Birthday day<input name="day" type="number" min="1" max="31" value="${esc(state.birthday.day)}" required></label><button class="button" type="submit">Save birthday setup <span>↗</span></button></form><div class="share-panel"><strong>Send this link to the receiver</strong><p>It contains the private profile in a hidden share code, so the page does not reveal the birthday details in the URL.</p><button class="button" type="button" data-action="copy-link">Copy receiver link <span>↗</span></button></div><div class="reply-panel"><div class="kicker">receiver replies · ${state.replies.length}</div>${replyCards()}</div><button class="text-button" type="button" data-action="receiver">Back to receiver view</button>`, "sender-page"); };
 
 function render() {
   if (state.senderMode) { renderSender(); return; }
@@ -128,7 +148,7 @@ function pages() {
     scene(`<div class="kicker">chapter 07 · pick one</div><h2>Three tiny<br><em>secrets for you.</em></h2><div class="surprise-grid">${CONFIG.surprises.map((item, index) => `<button class="surprise-card ${state.surprise === index ? "revealed" : ""}" data-surprise="${index}"><span>${item.icon}</span><strong>${state.surprise === index ? esc(item.message) : item.label}</strong><small>${state.surprise === index ? "for you, always" : "open me"}</small></button>`).join("")}</div>${state.surprise !== null ? button("One last chapter", "next") : `<p class="hint">choose the one that calls to you</p>`}`, "surprises-page"),
     scene(`<div class="kicker">chapter 08 · this is why</div><h2>Things I hope you<br><em>never forget.</em></h2><div class="appreciation">${CONFIG.appreciation.map((item, index) => `<p style="--delay:${index * 100}ms"><span>♡</span>${esc(item)}</p>`).join("")}</div><p class="wish">${esc(CONFIG.wish)}</p>${button("Make a wish", "next")}`, "appreciation-page"),
     scene(`<div class="kicker">chapter 09 · make it count</div><h2>One breath.<br><em>One wish.</em></h2><div class="cake"><div class="flames">${[0, 1, 2].map((n) => `<button class="flame ${state.candleCount > n ? "out" : ""}" data-candle="${n}" aria-label="Blow out candle ${n + 1}">✦</button>`).join("")}</div><div class="candles">|||</div><div class="cake-top"></div><div class="cake-body"></div></div><p class="hint">tap each flame to blow it out</p>${state.candleCount >= 3 ? `<p class="success-note">wish sent into the universe ✦</p>${button("The final surprise", "next")}` : ""}`, "cake-page"),
-    scene(`<div class="kicker">chapter 10 · before you go</div><h2>I have one tiny<br><em>birthday wish.</em></h2><p class="lede">${esc(CONFIG.giftPrompt)}</p>${state.replies.length ? `<p class="reply-count">${state.replies.length} ${state.replies.length === 1 ? "reply" : "replies"} saved so far. You can send another anytime.</p>` : ""}<form id="gift-form" class="gift-form"><div class="form-section wish-section"><span class="form-section-mark">✦</span><label for="gift-input">Your birthday wish</label><textarea id="gift-input" placeholder="Type your wish here..." aria-label="Your birthday wish" required></textarea></div><div class="form-section feedback-section"><span class="form-section-mark">♡</span><label for="gift-feedback">A note about this site</label><textarea id="gift-feedback" placeholder="What did you enjoy or what could feel better?" aria-label="Feedback about the site" required></textarea></div><label for="gift-name">Your name</label><input id="gift-name" type="text" placeholder="Your name" aria-label="Your name" required><div class="form-section rating-section"><span class="form-section-mark">10</span><label for="gift-rating">How would you rate this little world?</label><div class="gift-rating-row"><div class="rating-field"><input id="gift-rating" type="number" min="1" max="10" step="1" placeholder="8" aria-label="Rate the site out of 10" required><span>/ 10</span></div></div></div><button class="button" type="submit">Send my reply <span>↗</span></button></form><p class="hint">Every reply is saved and visible in the sender view.</p>${CONFIG.catGif ? `<div class="final-cat-wrap"><img class="final-cat-gif" src="${esc(CONFIG.catGif)}" alt="cat gif" loading="lazy"></div>` : ""}<p class="signature">with love,<br><strong>${esc(CONFIG.sender)}</strong></p>`, "final-page")
+    scene(`<div class="kicker">chapter 10 · before you go</div><h2>I have one tiny<br><em>birthday wish.</em></h2><p class="lede">${esc(CONFIG.giftPrompt)}</p>${state.replies.length ? `<p class="reply-count">${state.replies.length} ${state.replies.length === 1 ? "reply" : "replies"} saved so far. You can send another anytime.</p>` : ""}<form id="gift-form" class="gift-form"><div class="form-section wish-section"><span class="form-section-mark">✦</span><label for="gift-input">Your birthday wish</label><textarea id="gift-input" placeholder="Type your wish here..." aria-label="Your birthday wish" required></textarea></div><label for="gift-name">Your name</label><input id="gift-name" type="text" placeholder="Your name" aria-label="Your name" required><div class="form-section rating-section"><span class="form-section-mark">10</span><label for="gift-rating">How would you rate this little world?</label><div class="gift-rating-row"><div class="rating-field"><input id="gift-rating" type="number" min="1" max="10" step="1" placeholder="8" aria-label="Rate the site out of 10" required><span>/ 10</span></div></div></div><button class="button" type="submit">Send my reply <span>↗</span></button></form><p class="hint">Every reply is saved and visible in the sender view.</p>${CONFIG.catGif ? `<div class="final-cat-wrap"><img class="final-cat-gif" src="${esc(CONFIG.catGif)}" alt="cat gif" loading="lazy"></div>` : ""}<p class="signature">with love,<br><strong>${esc(CONFIG.sender)}</strong></p>`, "final-page")
   ];
 }
 
@@ -148,17 +168,15 @@ document.addEventListener("submit", (event) => {
   if (event.target.id === "gift-form") {
     event.preventDefault();
     const message = event.target.querySelector("#gift-input").value.trim();
-    const feedback = event.target.querySelector("#gift-feedback").value.trim();
     const name = event.target.querySelector("#gift-name").value.trim();
     const ratingField = event.target.querySelector("#gift-rating");
     const ratingValue = Number(ratingField?.value);
 
     if (!message) { showToast("Write your birthday wish first"); return; }
-    if (!feedback) { showToast("Add a little feedback about the site"); return; }
     if (!name) { showToast("Add your name before sending"); return; }
     if (!Number.isInteger(ratingValue) || ratingValue < 1 || ratingValue > 10) { showToast("Rate the site from 1 to 10"); return; }
 
-    state.replies.push({ name: name || state.recipient, message, feedback, rating: ratingValue, sentAt: new Date().toLocaleString() });
+    state.replies.push({ name: name || state.recipient, message, rating: ratingValue, sentAt: new Date().toLocaleString() });
     saveReplies();
     showToast(`Reply ${state.replies.length} has been saved ✦`);
     render();

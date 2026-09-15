@@ -17,8 +17,89 @@ const normalizeTheme = (value, fallback = "cherry", themes = {}) => {
   return Object.prototype.hasOwnProperty.call(themes, nextValue) ? nextValue : fallback;
 };
 
+const toBase64Url = (value) => {
+  if (typeof Buffer !== "undefined") return Buffer.from(value, "utf8").toString("base64url");
+
+  const binary = typeof btoa === "function" ? btoa(unescape(encodeURIComponent(value))) : value;
+  return binary.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+};
+
+const fromBase64Url = (value) => {
+  if (!value) return "";
+
+  if (typeof Buffer !== "undefined") return Buffer.from(String(value), "base64url").toString("utf8");
+
+  let normalized = String(value).replace(/-/g, "+").replace(/_/g, "/");
+  while (normalized.length % 4 !== 0) normalized += "=";
+  const binary = typeof atob === "function" ? atob(normalized) : normalized;
+  return decodeURIComponent(escape(binary));
+};
+
+const encodeProfileShare = (profile = {}) => {
+  const safeTheme = String(profile.theme ?? "cherry").trim() || "cherry";
+  const safeProfile = {
+    recipient: normalizeRecipient(profile.recipient, "you"),
+    month: Number(profile.month ?? profile.birthday?.month ?? 1),
+    day: Number(profile.day ?? profile.birthday?.day ?? 1),
+    theme: safeTheme
+  };
+
+  const payload = `${encodeURIComponent(safeProfile.recipient)}|${safeProfile.month}|${safeProfile.day}|${encodeURIComponent(safeProfile.theme)}`;
+  return toBase64Url(payload);
+};
+
+const decodeProfileShare = (encoded = "") => {
+  if (!encoded) return null;
+
+  try {
+    const rawValue = String(encoded);
+    let decoded = rawValue;
+    try {
+      decoded = decodeURIComponent(decoded);
+      if (decoded.startsWith("%")) decoded = decodeURIComponent(decoded);
+    } catch (error) {
+      decoded = rawValue;
+    }
+
+    if (decoded.trim().startsWith("{")) {
+      const profile = JSON.parse(decoded);
+      return {
+        recipient: normalizeRecipient(profile.recipient),
+        month: Number(profile.month ?? profile.birthday?.month),
+        day: Number(profile.day ?? profile.birthday?.day),
+        theme: String(profile.theme ?? "cherry")
+      };
+    }
+
+    decoded = fromBase64Url(rawValue);
+    const [recipient, month, day, theme] = decoded.split("|");
+    if (!recipient || !month || !day || !theme) return null;
+
+    return {
+      recipient: decodeURIComponent(recipient),
+      month: Number(month),
+      day: Number(day),
+      theme: decodeURIComponent(theme)
+    };
+  } catch (error) {
+    return null;
+  }
+};
+
 const resolveProfile = (search, savedSettings = null, defaultConfig = { recipient: "you", birthday: { month: 1, day: 1 }, theme: "cherry" }, themes = {}) => {
   const params = new URLSearchParams(search || "");
+  const sharedSecret = params.get("share");
+  if (sharedSecret) {
+    const decoded = decodeProfileShare(sharedSecret);
+    if (decoded) {
+      return {
+        recipient: normalizeRecipient(decoded.recipient, defaultConfig.recipient),
+        birthday: normalizeBirthday({ month: decoded.month, day: decoded.day }, defaultConfig.birthday),
+        theme: normalizeTheme(decoded.theme, defaultConfig.theme, themes)
+      };
+    }
+  }
+
   const hasQueryProfile = params.has("recipient") || params.has("month") || params.has("day") || params.has("theme");
 
   if (hasQueryProfile) {
@@ -49,10 +130,12 @@ if (typeof module !== "undefined") {
     normalizeBirthday,
     normalizeRecipient,
     normalizeTheme,
+    encodeProfileShare,
+    decodeProfileShare,
     resolveProfile
   };
 }
 
 if (typeof globalThis !== "undefined") {
-  globalThis.ProfileUtils = { normalizeBirthday, normalizeRecipient, resolveProfile };
+  globalThis.ProfileUtils = { normalizeBirthday, normalizeRecipient, normalizeTheme, encodeProfileShare, decodeProfileShare, resolveProfile };
 }
