@@ -7,6 +7,10 @@ const CONFIG = {
   title: "a little crush",
   footer: "made for one very cool, very handsome person",
   theme: "cherry",
+  backend: {
+    supabaseUrl: "",
+    supabaseAnonKey: ""
+  },
   music: { src: "KALYANI.mp3", title: "Kalyani", artwork: "" },
   letter: {
     intro: "hey you,",

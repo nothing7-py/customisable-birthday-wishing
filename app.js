@@ -109,6 +109,49 @@ const applySenderProfile = (recipient, month, day) => {
   saveSettings();
 };
 const saveReplies = () => localStorage.setItem(REPLY_KEY, JSON.stringify(state.replies));
+const backendConfigured = () => Boolean(CONFIG.backend?.supabaseUrl && CONFIG.backend?.supabaseAnonKey);
+const profileKey = () => window.ProfileUtils?.encodeProfileShare ? window.ProfileUtils.encodeProfileShare({ recipient: state.recipient, month: state.birthday.month, day: state.birthday.day, theme: state.theme }) : `${state.recipient}|${state.birthday.month}|${state.birthday.day}|${state.theme}`;
+const supabaseRequest = async (path, options = {}) => {
+  if (!backendConfigured()) return null;
+  const response = await fetch(`${CONFIG.backend.supabaseUrl.replace(/\/$/, "")}/rest/v1/${path}`, {
+    ...options,
+    headers: {
+      apikey: CONFIG.backend.supabaseAnonKey,
+      Authorization: `Bearer ${CONFIG.backend.supabaseAnonKey}`,
+      "Content-Type": "application/json",
+      ...(options.headers || {})
+    }
+  });
+  if (!response.ok) throw new Error(`Supabase request failed: ${response.status}`);
+  return response.status === 204 ? null : response.json();
+};
+const loadRemoteReplies = async () => {
+  if (!backendConfigured()) return;
+  try {
+    const replies = await supabaseRequest(`birthday_replies?profile_key=eq.${encodeURIComponent(profileKey())}&select=name,message,rating,sent_at&order=sent_at.asc`);
+    if (Array.isArray(replies)) {
+      state.replies = replies.map((reply) => ({ name: reply.name, message: reply.message, rating: reply.rating, sentAt: new Date(reply.sent_at).toLocaleString() }));
+      saveReplies();
+      render();
+    }
+  } catch (error) {
+    showToast("Offline mode: replies are saved on this device");
+  }
+};
+const saveRemoteReply = async (reply) => {
+  if (!backendConfigured()) return true;
+  try {
+    await supabaseRequest("birthday_replies", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ profile_key: profileKey(), recipient: state.recipient, name: reply.name, message: reply.message, rating: reply.rating })
+    });
+    return true;
+  } catch (error) {
+    showToast("Saved here, but remote sync is unavailable");
+    return false;
+  }
+};
 const replyCards = () => state.replies.length ? state.replies.slice().reverse().map((reply, index) => `<article class="reply-card"><span class="reply-number">${state.replies.length - index}</span><h3>“${esc(reply.message)}”</h3>${reply.feedback ? `<p class="reply-feedback">“${esc(reply.feedback)}”</p>` : ""}<p>Replied on ${esc(reply.sentAt)} by ${esc(reply.name || state.recipient)}${reply.rating ? ` · Rated ${esc(reply.rating)}/10` : ""}.</p></article>`).join("") : `<p class="lede">No replies yet. They will appear here after the receiver sends them.</p>`;
 const receiverLink = () => {
   const url = new URL(window.location.href);
@@ -176,8 +219,10 @@ document.addEventListener("submit", (event) => {
     if (!name) { showToast("Add your name before sending"); return; }
     if (!Number.isInteger(ratingValue) || ratingValue < 1 || ratingValue > 10) { showToast("Rate the site from 1 to 10"); return; }
 
-    state.replies.push({ name: name || state.recipient, message, rating: ratingValue, sentAt: new Date().toLocaleString() });
+    const reply = { name: name || state.recipient, message, rating: ratingValue, sentAt: new Date().toLocaleString() };
+    state.replies.push(reply);
     saveReplies();
+    saveRemoteReply(reply);
     showToast(`Reply ${state.replies.length} has been saved ✦`);
     render();
   }
@@ -199,3 +244,4 @@ if (CONFIG.music.src) { music.src = getMusicSrc(); music.load(); }
 setInterval(() => { if (!state.senderMode && state.page === 1) render(); }, 60000);
 if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js"));
 render();
+loadRemoteReplies();

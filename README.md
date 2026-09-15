@@ -10,7 +10,9 @@ Open `config.js` and edit the single `CONFIG` object. Set `birthday.month` and `
 
 Use the `Sender view` button in the top-right corner to enter or change the receiver name and birthday month and day. After saving, use `Copy receiver link` and send that link to the receiver. Opening it applies the shared name and date before the configured defaults and saves them in the receiver's browser. The receiver starts on the countdown page, where the saved name and date appear with confetti, and can enter the journey after viewing them. At the end, they can type a birthday wish and their name. Every submission is appended to that browser's local storage with the receiver's reply date and time, so the receiver can send as many replies as they like. Open `Sender view` again on the same device to see the complete reply history. Older single-reply data is migrated automatically the first time the app loads.
 
-For a sender and recipient on different devices, deploy the site with a backend or form endpoint and replace the local-storage reply handler in `app.js`; static GitHub Pages hosting cannot sync private replies between browsers by itself.
+For shared replies across different devices, this project supports Supabase. Create a Supabase project, open the SQL editor, run `supabase-schema.sql`, then copy the project URL and its public anon key into `CONFIG.backend` in `config.js`. The receiver does not need a GitHub account or a Supabase account. Replies are stored with the hidden profile key, so the sender and receiver see the same wish history. If the backend settings are blank or unavailable, the app falls back to local storage and still accepts unlimited repeated replies on that device.
+
+The public anon key is intended for browser use. The database policies in `supabase-schema.sql` allow anonymous inserts and reads, so anyone who knows a profile key can read that profile's replies. Do not put a Supabase service-role key in `config.js`.
 
 ## Run locally
 
