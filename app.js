@@ -20,63 +20,13 @@ const themes = {
   mountain: { name: "Mountains", description: "Golden light, open air, and new horizons.", icon: "△", className: "theme-mountain" }
 };
 const normalizeReplies = (value) => Array.isArray(value) ? value : value ? [value] : [];
-const normalizeBirthday = (value, fallback = CONFIG.birthday) => {
-  const month = Number(value?.month ?? fallback.month);
-  const day = Number(value?.day ?? fallback.day);
-  return {
-    month: Number.isInteger(month) && month >= 1 && month <= 12 ? month : Number(fallback.month),
-    day: Number.isInteger(day) && day >= 1 && day <= 31 ? day : Number(fallback.day)
-  };
-};
-const normalizeRecipient = (value, fallback = CONFIG.recipient) => {
-  const nextValue = String(value ?? fallback).trim();
-  return nextValue || fallback;
-};
-const normalizeTheme = (value, fallback = CONFIG.theme) => Object.prototype.hasOwnProperty.call(themes, String(value ?? "").trim()) ? String(value).trim() : fallback;
-const resolveProfile = (searchString = window.location.search, savedProfile = savedSettings, defaultProfile = { recipient: CONFIG.recipient, birthday: CONFIG.birthday, theme: CONFIG.theme }) => {
-  const params = new URLSearchParams(searchString || "");
-  const sharedSecret = params.get("share");
-  if (sharedSecret) {
-    const decoded = globalThis.ProfileUtils?.decodeProfileShare ? globalThis.ProfileUtils.decodeProfileShare(sharedSecret) : null;
-    if (decoded) {
-      return {
-        recipient: normalizeRecipient(decoded.recipient, defaultProfile.recipient),
-        birthday: normalizeBirthday({ month: decoded.month, day: decoded.day }, defaultProfile.birthday),
-        theme: normalizeTheme(decoded.theme, defaultProfile.theme)
-      };
-    }
-  }
-
-  const hasSharedProfile = params.has("recipient") || params.has("month") || params.has("day") || params.has("theme");
-
-  if (hasSharedProfile) {
-    return {
-      recipient: normalizeRecipient(params.get("recipient"), defaultProfile.recipient),
-      birthday: normalizeBirthday({ month: params.get("month"), day: params.get("day") }, defaultProfile.birthday),
-      theme: normalizeTheme(params.get("theme"), defaultProfile.theme)
-    };
-  }
-
-  if (savedProfile && (savedProfile.recipient || savedProfile.birthday)) {
-    return {
-      recipient: normalizeRecipient(savedProfile.recipient, defaultProfile.recipient),
-      birthday: normalizeBirthday(savedProfile.birthday, defaultProfile.birthday),
-      theme: normalizeTheme(savedProfile.theme, defaultProfile.theme)
-    };
-  }
-
-  return {
-    recipient: normalizeRecipient(defaultProfile.recipient),
-    birthday: normalizeBirthday(defaultProfile.birthday, defaultProfile.birthday),
-    theme: normalizeTheme(defaultProfile.theme, defaultProfile.theme)
-  };
-};
+const resolveAppProfile = (searchString = window.location.search, savedProfile = savedSettings, defaultProfile = { recipient: CONFIG.recipient, birthday: CONFIG.birthday, theme: CONFIG.theme }) => globalThis.ProfileUtils.resolveProfile(searchString, savedProfile, defaultProfile, themes);
 const sharedProfile = (() => {
   const params = new URLSearchParams(window.location.search);
   const hasShared = params.has("share") || params.has("recipient") || params.has("month") || params.has("day") || params.has("theme");
-  return hasShared ? resolveProfile(window.location.search, null, { recipient: CONFIG.recipient, birthday: CONFIG.birthday, theme: CONFIG.theme }) : null;
+  return hasShared ? resolveAppProfile(window.location.search, null, { recipient: CONFIG.recipient, birthday: CONFIG.birthday, theme: CONFIG.theme }) : null;
 })();
-const initialProfile = sharedProfile || resolveProfile(window.location.search, savedSettings, { recipient: CONFIG.recipient, birthday: CONFIG.birthday, theme: CONFIG.theme });
+const initialProfile = sharedProfile || resolveAppProfile(window.location.search, savedSettings, { recipient: CONFIG.recipient, birthday: CONFIG.birthday, theme: CONFIG.theme });
 const state = { page: 0, theme: initialProfile.theme, musicPlaying: false, candleCount: 0, surprise: null, openedGift: false, letterOpen: false, senderMode: false, recipient: initialProfile.recipient, birthday: initialProfile.birthday, replies: normalizeReplies(savedReplies) };
 const journey = document.querySelector("#journey");
 const toast = document.querySelector("#toast");
